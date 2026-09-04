@@ -26,7 +26,7 @@ class CreateOrderAction
                 $product = Product::where('id', $itemData['product_id'])->lockForUpdate()->firstOrFail();
 
                 if ($product->stock < $itemData['quantity']) {
-                    throw new RuntimeException("Недостаточно товара {$product->title} на складе.");
+                    throw new \Domain\Shared\Exceptions\BusinessException("Недостаточно товара {$product->title} на складе.");
                 }
 
                 // Списываем остаток
