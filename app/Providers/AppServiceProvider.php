@@ -6,6 +6,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
 use Domain\Orders\Events\OrderCreated;
 use Domain\Orders\Listeners\SendOrderConfirmationNotification;
+use Infrastructure\Payments\PaymentGatewayInterface;
+use Infrastructure\Payments\FakePaymentGateway;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,7 +16,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Регистрируем наш платежный шлюз в контейнере зависимостей
+        $this->app->bind(PaymentGatewayInterface::class, FakePaymentGateway::class);
     }
 
     /**
@@ -23,9 +26,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
        // Ручное связывание доменного события и асинхронного листенера
-    Event::listen(
-        OrderCreated::class,
-        SendOrderConfirmationNotification::class
-    );
+        Event::listen(
+            OrderCreated::class,
+            SendOrderConfirmationNotification::class
+        );
     }
 }
