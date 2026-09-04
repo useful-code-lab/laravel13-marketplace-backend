@@ -5,36 +5,31 @@ namespace Domain\Products\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+
 
 /**
- * @property string $id
- * @property string $title
- * @property string $slug
- * @property string|null $description
- * @property int $price_cents
- * @property int $stock
- * @property string $status
+ * Senior-модель в стиле Laravel 13 с использованием native PHP-атрибутов.
+ * Больше никаких прыжков между массивами конфигурации внутри класса.
  */
+#[Table('products', key: 'id', keyType: 'string', incrementing: false)]
+#[Fillable(['title', 'slug', 'description', 'price_cents', 'stock', 'status'])]
 class Product extends Model
 {
     use HasFactory;
-    use HasUuids; // Автоматически генерирует UUID при создании записи
+    use HasUuids; // Автоматическая генерация UUID для первичного ключа
 
-    // Указываем Laravel, что ID не является автоинкрементным int
-    public $incrementing = false;
-    protected $keyType = 'string';
-
-    protected $fillable = [
-        'title',
-        'slug',
-        'description',
-        'price_cents',
-        'stock',
-        'status',
-    ];
-
-    protected $casts = [
-        'price_cents' => 'integer',
-        'stock' => 'integer',
-    ];
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'price_cents' => 'integer',
+            'stock' => 'integer', 
+        ];
+    }
 }
