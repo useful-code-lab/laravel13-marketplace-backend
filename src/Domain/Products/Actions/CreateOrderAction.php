@@ -12,9 +12,9 @@ class CreateOrderAction
 {
     public function execute(OrderData $data): Order
     {
-        // Оборачиваем всё в ACID-транзакцию
-        return DB::transaction(function () use ($data) {
-            $order = Order::create([
+        // 1. Создаем заказ внутри ACID-транзакции и сохраняем его в переменную $order
+        $order = DB::transaction(function () use ($data) {
+            $createdOrder = Order::create([
                 'total_cents' => 0,
                 'status' => 'pending',
             ]);
@@ -29,13 +29,13 @@ class CreateOrderAction
                     throw new \Domain\Shared\Exceptions\BusinessException("Недостаточно товара {$product->title} на складе.");
                 }
 
-                // Списываем остаток
+                // Списываем остаток товара
                 $product->decrement('stock', $itemData['quantity']);
 
                 $itemPrice = $product->price_cents * $itemData['quantity'];
                 $totalCents += $itemPrice;
 
-                $order->items()->create([
+                $createdOrder->items()->create([
                     'product_id' => $product->id,
                     'quantity' => $itemData['quantity'],
                     'price_cents' => $product->price_cents,
@@ -43,9 +43,15 @@ class CreateOrderAction
             }
 
             // Обновляем итоговую сумму заказа
-            $order->update(['total_cents' => $totalCents]);
+            $createdOrder->update(['total_cents' => $totalCents]);
 
-            return $order;
+            return $createdOrder;
         });
+
+        // 2. Выстреливаем событие ВНЕ транзакции (когда данные точно закоммичены в БД)
+        event(new \Domain\Orders\Events\OrderCreated($order));
+
+        // 3. Возвращаем результат наружу в контроллер
+        return $order;
     }
-}
+
