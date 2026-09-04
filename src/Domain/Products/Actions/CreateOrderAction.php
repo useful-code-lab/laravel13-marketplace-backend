@@ -54,4 +54,4 @@ class CreateOrderAction
         // 3. Возвращаем результат наружу в контроллер
         return $order;
     }
-
+}
