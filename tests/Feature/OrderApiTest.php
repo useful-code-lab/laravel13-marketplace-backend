@@ -15,6 +15,16 @@ class OrderApiTest extends TestCase
 
     public function test_can_create_order_successfully_and_receives_payment_url(): void
     {
+                // Добавьте эти строки первыми внутри каждого тест-метода:
+        $user = \App\Models\User::create([
+            'name' => 'Customer User',
+            'email' => 'customer' . uniqid() . '@example.com', // уникальный email для каждого теста
+            'password' => 'password123',
+            'role' => 'customer'
+        ]);
+        \Laravel\Sanctum\Sanctum::actingAs($user);
+
+        
         // 1. Фейкуем события, чтобы листенеры не выполнялись вживую во время теста
         Event::fake([OrderCreated::class]);
 
@@ -55,6 +65,16 @@ class OrderApiTest extends TestCase
 
     public function test_cannot_create_order_if_out_of_stock(): void
     {
+            // Добавьте эти строки первыми внутри каждого тест-метода:
+        $user = \App\Models\User::create([
+            'name' => 'Customer User',
+            'email' => 'customer' . uniqid() . '@example.com', // уникальный email для каждого теста
+            'password' => 'password123',
+            'role' => 'customer'
+        ]);
+        \Laravel\Sanctum\Sanctum::actingAs($user);
+
+
         /** @var Product $product */
         $product = Product::create([
             'title' => 'Xbox Series X',
