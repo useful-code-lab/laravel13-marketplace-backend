@@ -2,12 +2,13 @@
 
 namespace Domain\Products\Models;
 
+use App\Models\User;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Attributes\Table;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Senior-модель в стиле Laravel 13 с использованием native PHP-атрибутов.
@@ -29,7 +30,15 @@ class Product extends Model
     {
         return [
             'price_cents' => 'integer',
-            'stock' => 'integer', 
+            'stock' => 'integer',
         ];
+    }
+
+    /**
+     * Связь товара с его продавцом
+     */
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'vendor_id');
     }
 }
