@@ -8,6 +8,9 @@ use Domain\Orders\Events\OrderCreated;
 use Domain\Orders\Listeners\SendOrderConfirmationNotification;
 use Infrastructure\Payments\PaymentGatewayInterface;
 use Infrastructure\Payments\FakePaymentGateway;
+use Illuminate\Support\Facades\Gate; 
+use Domain\Products\Models\Product;
+use App\Policies\ProductPolicy;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,5 +33,8 @@ class AppServiceProvider extends ServiceProvider
             OrderCreated::class,
             SendOrderConfirmationNotification::class
         );
+
+        // Явно указываем Laravel, какая политика защищает доменную модель
+        Gate::policy(Product::class, ProductPolicy::class);
     }
 }

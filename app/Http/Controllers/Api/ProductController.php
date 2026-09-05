@@ -8,6 +8,9 @@ use Domain\Products\Actions\CreateProductAction;
 use Domain\Products\DataTransferObjects\ProductData;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Domain\Products\Models\Product; 
+use Illuminate\Support\Facades\Gate;
+
 
 class ProductController extends Controller
 {
@@ -16,6 +19,9 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request, CreateProductAction $action): JsonResponse
     {
+        // Проверяем права текущего авторизованного пользователя на создание модели Product
+        Gate::authorize('create', Product::class);
+
         // Преобразуем валидированные данные из HTTP-запроса в доменный DTO
         $dto = new ProductData(
             title: $request->input('title'),
