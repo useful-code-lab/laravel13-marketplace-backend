@@ -3,6 +3,7 @@
 namespace Domain\Products\Models;
 
 use App\Models\User;
+use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -40,5 +41,13 @@ class Product extends Model
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'vendor_id');
+    }
+
+    /**
+     * Явное указание фабрики для DDD модели
+     */
+    protected static function newFactory(): ProductFactory
+    {
+        return ProductFactory::new();
     }
 }
