@@ -38,7 +38,7 @@ class ProductApiTest extends TestCase
         $response->assertStatus(Response::HTTP_CREATED);
         $response->assertJsonStructure([
             'success',
-            'data' => ['id', 'title', 'slug', 'price_cents', 'stock', 'status'],
+            'data' => ['id', 'title', 'slug', 'price', 'stock', 'status'],
         ]);
         $response->assertJsonPath('data.slug', 'iphone-15-pro');
 

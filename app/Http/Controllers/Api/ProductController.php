@@ -4,32 +4,34 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreProductRequest;
+use App\Http\Resources\ProductResource;
 use Domain\Products\Actions\CreateProductAction;
 use Domain\Products\DataTransferObjects\ProductData;
+use Domain\Products\Models\Product;
+use Domain\Products\Queries\GetProductsQuery;
 use Illuminate\Http\JsonResponse;
-use Symfony\Component\HttpFoundation\Response;
-use Domain\Products\Models\Product; 
 use Illuminate\Support\Facades\Gate;
-
+use Symfony\Component\HttpFoundation\Response;
 
 class ProductController extends Controller
 {
-        /**
+    /**
      * Публичный просмотр каталога товаров с кэшированием
      */
-    public function index(\Domain\Products\Queries\GetProductsQuery $query): JsonResponse
+    public function index(GetProductsQuery $query): JsonResponse
     {
         $products = $query->execute(perPage: 10);
 
         return response()->json([
             'success' => true,
-            'data' => $products->items(),
+            // Используем collection() для форматирования массивов/пагинации
+            'data' => ProductResource::collection($products->items()),
             'pagination' => [
                 'current_page' => $products->currentPage(),
                 'last_page' => $products->lastPage(),
                 'total' => $products->total(),
                 'per_page' => $products->perPage(),
-            ]
+            ],
         ], Response::HTTP_OK);
     }
 
@@ -48,23 +50,16 @@ class ProductController extends Controller
             priceCents: $request->input('price_cents'),
             stock: $request->input('stock'),
             status: $request->input('status', 'draft'),
-            vendorId: $request->user()->id, 
+            vendorId: $request->user()->id,
         );
 
         // Вызываем бизнес-логику создания продукта
         $product = $action->execute($dto);
 
-        // Возвращаем строго типизированный JSON-ответ
         return response()->json([
             'success' => true,
-            'data' => [
-                'id' => $product->id,
-                'title' => $product->title,
-                'slug' => $product->slug,
-                'price_cents' => $product->price_cents,
-                'stock' => $product->stock,
-                'status' => $product->status,
-            ]
+            // Одиночную модель оборачиваем в экземпляр ресурса
+            'data' => new ProductResource($product),
         ], Response::HTTP_CREATED);
     }
 }
