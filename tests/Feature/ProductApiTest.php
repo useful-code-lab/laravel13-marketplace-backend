@@ -2,9 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
+use Domain\Products\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Illuminate\Support\Facades\DB;
+use Laravel\Sanctum\Sanctum;
 use Symfony\Component\HttpFoundation\Response;
+use Tests\TestCase;
 
 class ProductApiTest extends TestCase
 {
@@ -13,15 +17,15 @@ class ProductApiTest extends TestCase
     public function test_can_create_product_via_api(): void
     {
         // Создаем тестового пользователя
-        $user = \App\Models\User::create([
+        $user = User::create([
             'name' => 'Vendor User',
             'email' => 'vendor@example.com',
             'password' => 'password123',
-            'role' => 'vendor'
+            'role' => 'vendor',
         ]);
 
         // Симулируем, что запрос отправляет этот авторизованный пользователь
-        \Laravel\Sanctum\Sanctum::actingAs($user);
+        Sanctum::actingAs($user);
 
         $response = $this->postJson('/api/products', [
             'title' => 'iPhone 15 Pro',
@@ -34,7 +38,7 @@ class ProductApiTest extends TestCase
         $response->assertStatus(Response::HTTP_CREATED);
         $response->assertJsonStructure([
             'success',
-            'data' => ['id', 'title', 'slug', 'price_cents', 'stock', 'status']
+            'data' => ['id', 'title', 'slug', 'price_cents', 'stock', 'status'],
         ]);
         $response->assertJsonPath('data.slug', 'iphone-15-pro');
 
@@ -47,14 +51,14 @@ class ProductApiTest extends TestCase
     public function test_customer_cannot_create_product_via_api(): void
     {
         // 1. Создаем пользователя с ролью customer
-        $user = \App\Models\User::create([
+        $user = User::create([
             'name' => 'Regular Customer',
             'email' => 'customer_bad@example.com',
             'password' => 'password123',
-            'role' => 'customer' // Роль, которой запрещено создавать товары
+            'role' => 'customer', // Роль, которой запрещено создавать товары
         ]);
 
-        \Laravel\Sanctum\Sanctum::actingAs($user);
+        Sanctum::actingAs($user);
 
         // 2. Пытаемся отправить запрос
         $response = $this->postJson('/api/products', [
@@ -69,8 +73,17 @@ class ProductApiTest extends TestCase
 
     public function test_can_get_paginated_list_of_published_products_only(): void
     {
+        // Создаем вендора для тестов каталога
+        $vendor = User::create([
+            'name' => 'Test Vendor',
+            'email' => 'vendor_catalog@example.com',
+            'password' => 'password',
+            'role' => 'vendor',
+        ]);
+
         // 1. Создаем один опубликованный продукт и один черновик
-        \Domain\Products\Models\Product::create([
+        Product::create([
+            'vendor_id' => $vendor->id, // Передаем связь
             'title' => 'Published Item',
             'slug' => 'published-item',
             'price_cents' => 1000,
@@ -78,12 +91,20 @@ class ProductApiTest extends TestCase
             'status' => 'published', // Должен быть в выдаче
         ]);
 
-        \Domain\Products\Models\Product::create([
+        $vendor = User::create([
+            'name' => 'Test Vendor',
+            'email' => 'vendor_cache@example.com',
+            'password' => 'password',
+            'role' => 'vendor',
+        ]);
+
+        Product::create([
             'title' => 'Draft Item',
             'slug' => 'draft-item',
             'price_cents' => 2000,
             'stock' => 0,
             'status' => 'draft', // Должен быть СКРЫТ
+            'vendor_id' => $vendor->id,
         ]);
 
         // 2. Делаем публичный запрос (без авторизации) на чтение каталога
@@ -94,7 +115,7 @@ class ProductApiTest extends TestCase
         $response->assertJsonStructure([
             'success',
             'data',
-            'pagination' => ['current_page', 'last_page', 'total', 'per_page']
+            'pagination' => ['current_page', 'last_page', 'total', 'per_page'],
         ]);
 
         // 4. Проверяем, что вернулся ровно 1 продукт (только опубликованный)
@@ -104,8 +125,16 @@ class ProductApiTest extends TestCase
 
     public function test_products_catalog_is_cached(): void
     {
+        $vendor = User::create([
+            'name' => 'Test Vendor 2',
+            'email' => 'vendor_cache@example.com',
+            'password' => 'password',
+            'role' => 'vendor',
+        ]);
+
         // 1. Создаем продукт
-        \Domain\Products\Models\Product::create([
+        Product::create([
+            'vendor_id' => $vendor->id, // Передаем связь
             'title' => 'Cached Phone',
             'slug' => 'cached-phone',
             'price_cents' => 5000,
@@ -117,7 +146,7 @@ class ProductApiTest extends TestCase
         $this->getJson('/api/products');
 
         // 3. Физически удаляем продукт из базы данных в обход логики приложения
-        \Illuminate\Support\Facades\DB::table('products')->delete();
+        DB::table('products')->delete();
 
         // 4. Делаем второй запрос к API
         $response = $this->getJson('/api/products');
@@ -127,6 +156,4 @@ class ProductApiTest extends TestCase
         $response->assertJsonCount(1, 'data');
         $response->assertJsonPath('data.0.title', 'Cached Phone');
     }
-
-
 }

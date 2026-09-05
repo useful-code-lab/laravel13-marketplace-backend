@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
  * Больше никаких прыжков между массивами конфигурации внутри класса.
  */
 #[Table('products', key: 'id', keyType: 'string', incrementing: false)]
-#[Fillable(['title', 'slug', 'description', 'price_cents', 'stock', 'status'])]
+#[Fillable(['title', 'slug', 'description', 'price_cents', 'stock', 'status', 'vendor_id'])]
 class Product extends Model
 {
     use HasFactory;

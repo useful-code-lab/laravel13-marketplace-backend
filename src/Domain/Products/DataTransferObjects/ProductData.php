@@ -12,6 +12,7 @@ readonly class ProductData
         public ?string $description,
         public int $priceCents,
         public int $stock,
+        public string $vendorId, 
         public string $status = 'draft'
     ) {}
 }

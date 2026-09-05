@@ -16,6 +16,7 @@ class CreateProductAction
         $slug = $this->generateUniqueSlug($data->title);
 
         $product = Product::create([
+            'vendor_id' => $data->vendorId, 
             'title' => $data->title,
             'slug' => $slug,
             'description' => $data->description,

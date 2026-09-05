@@ -47,7 +47,8 @@ class ProductController extends Controller
             description: $request->input('description'),
             priceCents: $request->input('price_cents'),
             stock: $request->input('stock'),
-            status: $request->input('status', 'draft')
+            status: $request->input('status', 'draft'),
+            vendorId: $request->user()->id, 
         );
 
         // Вызываем бизнес-логику создания продукта
