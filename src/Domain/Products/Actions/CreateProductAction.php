@@ -15,7 +15,7 @@ class CreateProductAction
     {
         $slug = $this->generateUniqueSlug($data->title);
 
-        return Product::create([
+        $product = Product::create([
             'title' => $data->title,
             'slug' => $slug,
             'description' => $data->description,
@@ -23,7 +23,16 @@ class CreateProductAction
             'stock' => $data->stock,
             'status' => $data->status,
         ]);
+
+        // Инвалидируем кэш каталога, так как данные изменились
+        // В реальном проекте с Redis это будет: Cache::tags(['products'])->flush();
+        // Для стандартного кэша очищаем все страницы (для простоты очистим базовые ключи или весь пул)
+        // В Laravel 11/13 можно использовать хелпер для выборочной очистки или просто очистить кэш продуктов:
+        \Illuminate\Support\Facades\Cache::flush(); 
+
+        return $product;
     }
+
 
     /**
      * Рекурсивная генерация уникального slug для избежания конфликтов в БД

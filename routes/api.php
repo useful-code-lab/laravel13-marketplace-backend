@@ -16,12 +16,14 @@ Route::post('/webhooks/payment', [WebhookController::class, 'handlePaymentGatewa
 // Публичные маршруты (Доступны всем)
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/webhooks/payment', [WebhookController::class, 'handlePaymentGateway']);
+Route::get('/products', [ProductController::class, 'index']);
 
 // Защищенные маршруты (Требуют валидный Bearer Token в заголовке Authorization)
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/products', [ProductController::class, 'store']);
     Route::post('/orders', [OrderController::class, 'store']);
 });
+
 
 Route::get('/user', function (Request $request) {
     return $request->user();

@@ -67,4 +67,66 @@ class ProductApiTest extends TestCase
         $response->assertStatus(Response::HTTP_FORBIDDEN);
     }
 
+    public function test_can_get_paginated_list_of_published_products_only(): void
+    {
+        // 1. Создаем один опубликованный продукт и один черновик
+        \Domain\Products\Models\Product::create([
+            'title' => 'Published Item',
+            'slug' => 'published-item',
+            'price_cents' => 1000,
+            'stock' => 5,
+            'status' => 'published', // Должен быть в выдаче
+        ]);
+
+        \Domain\Products\Models\Product::create([
+            'title' => 'Draft Item',
+            'slug' => 'draft-item',
+            'price_cents' => 2000,
+            'stock' => 0,
+            'status' => 'draft', // Должен быть СКРЫТ
+        ]);
+
+        // 2. Делаем публичный запрос (без авторизации) на чтение каталога
+        $response = $this->getJson('/api/products');
+
+        // 3. Проверяем успешный статус и структуру пагинации
+        $response->assertStatus(Response::HTTP_OK);
+        $response->assertJsonStructure([
+            'success',
+            'data',
+            'pagination' => ['current_page', 'last_page', 'total', 'per_page']
+        ]);
+
+        // 4. Проверяем, что вернулся ровно 1 продукт (только опубликованный)
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonPath('data.0.title', 'Published Item');
+    }
+
+    public function test_products_catalog_is_cached(): void
+    {
+        // 1. Создаем продукт
+        \Domain\Products\Models\Product::create([
+            'title' => 'Cached Phone',
+            'slug' => 'cached-phone',
+            'price_cents' => 5000,
+            'stock' => 2,
+            'status' => 'published',
+        ]);
+
+        // 2. Делаем первый запрос, чтобы прогреть кэш
+        $this->getJson('/api/products');
+
+        // 3. Физически удаляем продукт из базы данных в обход логики приложения
+        \Illuminate\Support\Facades\DB::table('products')->delete();
+
+        // 4. Делаем второй запрос к API
+        $response = $this->getJson('/api/products');
+
+        // 5. Проверяем, что API ВСЁ ЕЩЕ отдает продукт, так как данные берутся из кэша, а не из пустой БД
+        $response->assertStatus(Response::HTTP_OK);
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonPath('data.0.title', 'Cached Phone');
+    }
+
+
 }

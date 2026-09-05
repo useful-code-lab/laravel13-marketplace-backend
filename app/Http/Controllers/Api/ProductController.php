@@ -14,6 +14,25 @@ use Illuminate\Support\Facades\Gate;
 
 class ProductController extends Controller
 {
+        /**
+     * Публичный просмотр каталога товаров с кэшированием
+     */
+    public function index(\Domain\Products\Queries\GetProductsQuery $query): JsonResponse
+    {
+        $products = $query->execute(perPage: 10);
+
+        return response()->json([
+            'success' => true,
+            'data' => $products->items(),
+            'pagination' => [
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'total' => $products->total(),
+                'per_page' => $products->perPage(),
+            ]
+        ], Response::HTTP_OK);
+    }
+
     /**
      * Внедряем экшен через Dependency Injection (DI) в конструктор или метод
      */
